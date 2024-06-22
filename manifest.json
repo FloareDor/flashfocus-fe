@@ -25,7 +25,8 @@
   "permissions": [
     "activeTab",
     "identity",
-    "storage"
+    "storage",
+    "webNavigation"
   ],
   "content_scripts": [
     {

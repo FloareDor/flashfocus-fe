@@ -4,6 +4,12 @@ import './style.css'
 import flashlogo from '@assets/img/flashlogo.svg';
 import confetti from 'canvas-confetti';
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	if (message.action === "checkUrl") {
+	  checkAndInjectFlashcard();
+	}
+  });
+
 const Flashcard: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [userAnswer, setUserAnswer] = useState('');
@@ -113,7 +119,30 @@ function removeOverlay() {
   }
 }
 
-// Check if we're on Instagram
-if (window.location.hostname === 'www.instagram.com') {
-  injectFlashcard();
+function checkBadUrls(currentUrl: string, badUrls: string[]) {
+  return badUrls.some(badUrl => {
+    const cleanBadUrl = badUrl.replace(/^https?:\/\/(www\.)?/, '').toLowerCase();
+	  const cleanCurrentUrl = currentUrl.replace(/^https?:\/\/(www\.)?/, '').toLowerCase();
+	  console.log(cleanBadUrl);
+	  console.log(cleanBadUrl);
+	  console.log(cleanBadUrl);
+    return cleanCurrentUrl.startsWith(cleanBadUrl);
+  });
 }
+
+function checkAndInjectFlashcard() {
+  chrome.storage.local.get(['badUrls'], (result) => {
+    if (result.badUrls && Array.isArray(result.badUrls)) {
+      const currentUrl = window.location.href;
+      if (checkBadUrls(currentUrl, result.badUrls)) {
+        injectFlashcard();
+      }
+    }
+  });
+}
+
+// Run the check when the content script loads
+checkAndInjectFlashcard();
+
+// Listen for URL changes
+window.addEventListener('popstate', checkAndInjectFlashcard);
