@@ -1,0 +1,63 @@
+{
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "name": "FlashFocus",
+  "description": "Helping you curb exam anxiety.",
+  "options_ui": {
+    "page": "src/pages/options/index.html"
+  },
+  "background": {
+    "service_worker": "src/pages/background/index.ts",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "src/pages/popup/index.html",
+    "default_icon": {
+      "32": "public/icon-32.png"
+    }
+  },
+  "chrome_url_overrides": {
+    "newtab": "src/pages/newtab/index.html"
+  },
+  "icons": {
+    "128": "public/icon-128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "identity",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*",
+        "<all_urls>",
+        "*://www.instagram.com/*"
+      ],
+      "js": [
+        "src/pages/content/index.tsx",
+        "src/pages/content/flashcard.tsx"
+      ],
+      "css": [
+        "public/contentStyle.css"
+      ]
+    }
+  ],
+  "devtools_page": "src/pages/devtools/index.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "public/contentStyle.css",
+        "public/icon-128.png",
+        "public/icon-32.png",
+        "src/pages/onboard/index.html"
+      ],
+      "matches": []
+    }
+  ],
+	"oauth2": {
+		"client_id": "998161735702-vqbm0llqvp9vo6lo3kc9cucmg8kdmj84.apps.googleusercontent.com",
+		"scopes":["openid", "email", "profile"]
+	}
+}
