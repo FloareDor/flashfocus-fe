@@ -57,7 +57,6 @@ var manifest_default = {
         "public/contentStyle.css",
         "public/icon-128.png",
         "public/icon-32.png",
-        "src/pages/onboard/index.html"
       ],
       matches: []
     }
