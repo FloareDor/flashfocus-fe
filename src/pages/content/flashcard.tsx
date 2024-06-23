@@ -19,6 +19,7 @@ const Flashcard: React.FC = () => {
   const [examDate, setExamDate] = useState<string>('');
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
   const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
+  const [showCorrectOptions, setShowCorrectOptions] = useState(false);
 
   useEffect(() => {
     chrome.storage.local.get(['flashcards', 'examDate'], (result) => {
@@ -43,15 +44,7 @@ const Flashcard: React.FC = () => {
         spread: 70,
         origin: { y: 0.6 }
       });
-      setTimeout(() => {
-        if (currentCardIndex < flashcards.length - 1) {
-          setCurrentCardIndex(currentCardIndex + 1);
-          setIsFlipped(false);
-          setUserAnswer('');
-        } else {
-          removeOverlay();
-        }
-      }, 2000);
+      setShowCorrectOptions(true);
     } else {
       setShowContinuePrompt(true);
     }
@@ -64,8 +57,20 @@ const Flashcard: React.FC = () => {
   };
 
   const handleContinue = () => {
-    setShowBreathingAnimation(true);
+    setIsFlipped(true);
+    setShowBreathingAnimation(true); 
     startCountdown();
+  };
+
+  const handleNextQuestion = () => {
+    if (currentCardIndex < flashcards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1);
+      setIsFlipped(false);
+      setUserAnswer('');
+      setShowCorrectOptions(false);
+    } else {
+      removeOverlay();
+    }
   };
 
   const startCountdown = () => {
@@ -86,7 +91,7 @@ const Flashcard: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 backdrop-blur-md">
-      <div className={`bg-gray-900 p-8 rounded-3xl max-w-md w-full shadow-2xl perspective-1000 ${isFlipped ? 'flip' : ''} overflow-hidden relative`}>
+      <div className={`bg-gray-900 p-8 rounded-3xl max-w-md w-full shadow-2xl perspective-1000 ${isFlipped ? 'flip' : ''} transform-style-3d overflow-hidden relative`}>
         <div className="absolute inset-0 bg-gradient-to-br from-[#57b0a0] to-[#7e87ab] opacity-20"></div>
         <div className="relative w-full h-[50vh] transition-transform duration-700 transform-style-3d">
           <div className="absolute w-full h-full backface-hidden bg-gray-900 rounded-2xl p-6 flex flex-col justify-between">
@@ -114,9 +119,9 @@ const Flashcard: React.FC = () => {
               <img src={flashlogo} alt="Project Logo" className="w-8 h-8" width={32} height={32} />
               <span className='text-xl font-bold text-[#74ebd5]'>Flash Focus</span>
             </div>
-            {!isCorrect && showContinuePrompt ? (
+            {!isCorrect && showContinuePrompt && !showBreathingAnimation ? (
               <>
-                <h2 className="text-2xl font-bold mb-4 text-[#ACB6E5]">Are you sure you want to continue to this site?</h2>
+                <h2 className="text-2xl font-bold mb-4 text-[#ACB6E5]">Bruh, are you sure you want to fail your exam?</h2>
                 <p className="text-xl mb-6 text-gray-300">You have an exam on <span className="font-semibold text-[#ACB6E5]">{examDate}</span></p>
                 <div className="flex justify-between">
                   <button
@@ -141,10 +146,31 @@ const Flashcard: React.FC = () => {
                 <div className={`w-32 h-32 rounded-full bg-[#74ebd5] ${countdown % 2 === 0 ? 'animate-pulse' : 'animate-ping'}`}></div>
                 <p className="text-xl mt-8 text-gray-300">Redirecting in <span className="font-semibold text-[#57b0a0]">{countdown}</span> seconds...</p>
               </div>
+            ) : isCorrect && showCorrectOptions ? (
+              <>
+                <h2 className="text-4xl font-bold mb-6 text-[#57b0a0]">Correct!</h2>
+                <p className="text-2xl mb-4 text-white">
+                  Answer: <span className="font-semibold text-[#74ebd5]">{currentCard.answer}</span>
+                </p>
+                <div className="flex justify-between mt-6">
+                  <button
+                    onClick={handleNextQuestion}
+                    className="w-[48%] bg-gradient-to-r from-[#74ebd5] to-[#ACB6E5] text-gray-900 py-3 rounded-xl hover:from-[#57b0a0] hover:to-[#7e87ab] transition duration-300 ease-in-out transform hover:scale-105 font-semibold"
+                  >
+                    Next Question
+                  </button>
+                  <button
+                    onClick={removeOverlay}
+                    className="w-[48%] bg-gradient-to-r from-[#ff6b6b] to-[#feca57] text-gray-900 py-3 rounded-xl hover:from-[#ff5252] hover:to-[#ff9ff3] transition duration-300 ease-in-out transform hover:scale-105 font-semibold"
+                  >
+                    Continue to Site
+                  </button>
+                </div>
+              </>
             ) : (
               <>
                 <h2 className={`text-4xl font-bold mb-6 ${isCorrect ? 'text-[#57b0a0]' : 'text-[#ACB6E5]'}`}>
-                  {isCorrect ? "Correct!" : "Whoops..."}
+                  {isCorrect ? "Correct!" : "You sure about that?..."}
                 </h2>
                 <p className="text-2xl mb-4 text-white">
                   Answer: <span className="font-semibold text-[#74ebd5]">{currentCard.answer}</span>
