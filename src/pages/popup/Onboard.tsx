@@ -7,59 +7,155 @@ export default function Onboard(): JSX.Element {
   const [examDate, setExamDate] = useState<string>('');
   const [badUrls, setBadUrls] = useState<string>('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [jwtToken, setJwtToken] = useState<string | null>(null);
+  const [isLoadingFlashcards, setIsLoadingFlashcards] = useState(false);
 
   useEffect(() => {
-    // Load saved data when component mounts
-    chrome.storage.local.get(['examDate', 'badUrls', 'pdfName'], (result) => {
-      if (result.examDate) setExamDate(result.examDate);
-      if (result.badUrls) setBadUrls(Array.isArray(result.badUrls) ? result.badUrls.join(', ') : result.badUrls);
-      if (result.pdfName) setExistingPdfName(result.pdfName);
+    chrome.storage.local.get(['jwtToken', 'examDate', 'badUrls', 'flashcards'], (result) => {
+      if (result.jwtToken) {
+        setJwtToken(result.jwtToken);
+        if (result.examDate) setExamDate(result.examDate);
+        if (result.badUrls) setBadUrls(result.badUrls);
+        fetchExistingData(result.jwtToken);
+        if (!result.flashcards) {
+          fetchAndSaveFlashcards(result.jwtToken);
+        }
+      }
     });
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const data: { [key: string]: any } = {
-      examDate,
-      badUrls: badUrls.split(',').map(url => url.trim()).filter(url => url !== ''),
-    };
-  
-    if (pdfFile) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        if (event.target && event.target.result) {
-          data.pdfContent = event.target.result;
-          data.pdfName = pdfFile.name;
-          await saveDataLocally(data);
-          setExistingPdfName(pdfFile.name);
+  useEffect(() => {
+    // Load JWT token and existing data when component mounts
+    chrome.storage.local.get(['jwtToken', 'examDate', 'badUrls'], (result) => {
+      if (result.jwtToken) {
+        setJwtToken(result.jwtToken);
+        if (result.examDate) setExamDate(result.examDate);
+        if (result.badUrls) setBadUrls(result.badUrls);
+        fetchExistingData(result.jwtToken);
+      }
+    });
+  }, []);
+
+  const fetchExistingData = async (token: string) => {
+    try {
+      const response = await fetch('http://localhost:8000/get-data', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      };
-      reader.readAsDataURL(pdfFile);
-    } else {
-      await saveDataLocally(data);
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          const userData = data.data[0];
+          setExistingPdfName(userData.filename || null);
+          // Convert the date from DD-MM-YYYY to YYYY-MM-DD for the input field
+          if (userData.specified_date) {
+            const [day, month, year] = userData.specified_date.split('-');
+            const formattedDate = `${year}-${month}-${day}`;
+            setExamDate(formattedDate);
+            chrome.storage.local.set({ examDate: formattedDate });
+          } else {
+            setExamDate('');
+            chrome.storage.local.remove('examDate');
+          }
+          const urls = userData.urls ? userData.urls.join(', ') : '';
+          setBadUrls(urls);
+          chrome.storage.local.set({ badUrls: urls });
+        }
+      } else {
+        console.error('Failed to fetch existing data');
+      }
+    } catch (error) {
+      console.error('Error fetching existing data:', error);
     }
   };
 
-  const saveDataLocally = async (data: { [key: string]: any }) => {
+  const fetchAndSaveFlashcards = async (token: string) => {
+    setIsLoadingFlashcards(true);
     try {
-      // Ensure badUrls is always an array before saving
-      if (typeof data.badUrls === 'string') {
-        data.badUrls = data.badUrls.split(',').map(url => url.trim()).filter(url => url !== '');
+      const response = await fetch('http://localhost:8000/get-qna', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.response) {
+          chrome.storage.local.set({ flashcards: data.response }, () => {
+            console.log('Flashcards saved locally');
+          });
+        }
+      } else {
+        console.error('Failed to fetch flashcards');
       }
-      await chrome.storage.local.set(data);
-      console.log('Data saved locally:', data);
-      alert('Settings saved successfully!');
     } catch (error) {
-      console.error('Failed to save data:', error);
-      alert('Failed to save settings. Please try again.');
+      console.error('Error fetching flashcards:', error);
+    } finally {
+      setIsLoadingFlashcards(false);
+    }
+  };
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jwtToken) {
+      console.error('No JWT token available');
+      return;
+    }
+  
+    const formData = new FormData();
+    if (pdfFile) {
+      formData.append('file', pdfFile);
+    }
+    const formattedDate = examDate ? new Date(examDate).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).replace(/\//g, '-') : '';
+  
+    formData.append('date', formattedDate);
+    const urlsArray = badUrls.split(',').map(url => url.trim()).filter(url => url !== '');
+    formData.append('urls', JSON.stringify({ urls: urlsArray }));
+  
+    try {
+      const response = await fetch('http://localhost:8000/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${jwtToken}`
+        },
+        body: formData
+      });
+  
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Data uploaded successfully:', result);
+        alert('Settings saved successfully!');
+        setExistingPdfName(pdfFile ? pdfFile.name : existingPdfName);
+        
+        // Save data locally
+        chrome.storage.local.set({
+          examDate: examDate,
+          badUrls: badUrls
+        });
+
+        fetchAndSaveFlashcards(jwtToken);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to upload data:', errorData);
+        alert(`Failed to save settings: ${errorData.detail || 'Please try again.'}`);
+      }
+    } catch (error) {
+      console.error('Error uploading data:', error);
+      alert('An error occurred. Please try again.');
     }
   };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await chrome.storage.local.remove(['accessToken']);
+      await chrome.storage.local.remove(['jwtToken', 'examDate', 'badUrls', 'flashcards']);
       console.log('Logged out successfully.');
       window.location.reload();
     } catch (error) {
@@ -76,6 +172,9 @@ export default function Onboard(): JSX.Element {
         <div className="flex items-center gap-2 mb-8 px-4">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-[#74ebd5] to-[#ACB6E5] text-transparent bg-clip-text">Set Up FlashFocus</h1>
         </div>
+        {isLoadingFlashcards && (
+        <p className="mt-4 text-sm text-gray-400">Loading flashcards in the background...</p>
+      )}
         <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
           <div>
             <label htmlFor="pdf-upload" className="block text-sm font-medium mb-2 text-gray-300">

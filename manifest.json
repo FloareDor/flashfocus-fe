@@ -60,5 +60,8 @@
 	"oauth2": {
 		"client_id": "998161735702-vqbm0llqvp9vo6lo3kc9cucmg8kdmj84.apps.googleusercontent.com",
 		"scopes":["openid", "email", "profile"]
-	}
+	},
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ]
 }

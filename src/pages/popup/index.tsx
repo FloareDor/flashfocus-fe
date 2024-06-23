@@ -8,8 +8,8 @@ import Onboard from './Onboard';
 
 async function getIsSignedIn() {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['accessToken'], function(result) {
-      resolve(!!result.accessToken);
+    chrome.storage.local.get(['jwtToken'], function(result) {
+      resolve(!!result.jwtToken);
     });
   });
 }
