@@ -1,3 +1,3 @@
-const backend_url = 'https://waffle-be-3a2l5.ondigitalocean.app';
+const backend_url = 'http://64.227.184.173:8000';
 
 export default backend_url;

@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import './style.css'
 import flashlogo from '@assets/img/flashlogo.svg';
 import confetti from 'canvas-confetti';
+import backend_url from '../popup/links';
+import { validateYouTubeUrl } from '../popup/Onboard';
 
 interface FlashcardData {
   question: string;
@@ -224,14 +226,14 @@ async function getLocalBadUrls(): Promise<string[]> {
     });
   });
 }
-
-async function checkAndInjectFlashcard() {
+  
+  async function checkAndInjectFlashcard() {
 	try {
 	  const currentUrl = window.location.href;
 	  const badUrls = await getLocalBadUrls();
   
-	  const isBadUrl = checkUrlAgainstBadUrls(currentUrl, badUrls);
-  
+	const isBadUrl = checkUrlAgainstBadUrls(currentUrl, badUrls);
+
 	  if (isBadUrl) {
 		chrome.storage.local.get(['flashcards'], (result) => {
 		  if (result.flashcards && result.flashcards.length > 0) {
@@ -245,9 +247,9 @@ async function checkAndInjectFlashcard() {
 	  console.error('Error in checkAndInjectFlashcard:', error);
 	}
   }
-
-// Run the check when the content script loads
-checkAndInjectFlashcard();
-
-// Listen for URL changes
-window.addEventListener('popstate', checkAndInjectFlashcard);
+  
+  // Run the check when the content script loads
+  checkAndInjectFlashcard();
+  
+  // Listen for URL changes
+  window.addEventListener('popstate', checkAndInjectFlashcard);

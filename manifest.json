@@ -34,7 +34,8 @@
         "http://*/*",
         "https://*/*",
         "<all_urls>",
-        "*://www.instagram.com/*"
+        "*://www.instagram.com/*",
+        "*://www.youtube.com/*"
       ],
       "js": [
         "src/pages/content/index.tsx",
@@ -62,6 +63,8 @@
 	},
   "host_permissions": [
     "http://localhost:8000/*",
-    "https://waffle-be-3a2l5.ondigitalocean.app/*"
+    "https://waffle-be-3a2l5.ondigitalocean.app/*",
+    "http://64.227.184.173:8000/*",
+    "https://www.youtube.com/*"
   ]
 }

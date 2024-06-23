@@ -2,6 +2,44 @@ import React, { useState, useEffect } from 'react';
 import flashlogo from '@assets/img/flashlogo.svg';
 import backend_url from './links';
 
+
+
+async function validateYouTubeUrl(url: string): Promise<boolean> {
+
+  async function getAuthToken(): Promise<string> {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['jwtToken'], (result) => {
+      resolve(result.jwtToken || '');
+      });
+    });
+  }
+
+  const formData = new FormData();
+  formData.append('url', url);
+  const jwtToken = await getAuthToken();
+  try {
+    const response = await fetch(`${backend_url}/validate-url`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${jwtToken}`
+    },
+      body: formData,
+    });
+  
+    if (!response.ok) {
+    throw new Error('Network response was not ok');
+    }
+  
+    const data = await response.json();
+    alert(data.isBadURL)
+    return data.isBadURL;
+  } catch (error) {
+    console.error('Error validating YouTube URL:', error);
+    return false;
+  }
+}
+export { validateYouTubeUrl };
+
 export default function Onboard(): JSX.Element {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [existingPdfName, setExistingPdfName] = useState<string | null>(null);
@@ -97,7 +135,6 @@ export default function Onboard(): JSX.Element {
       setIsLoadingFlashcards(false);
     }
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
