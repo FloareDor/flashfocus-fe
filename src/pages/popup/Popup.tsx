@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import backend_url from './links';
 
 export default function Popup(): JSX.Element {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -32,7 +33,7 @@ export default function Popup(): JSX.Element {
       console.log('Token acquired:', token);
 
       try {
-        const response = await fetch('http://localhost:8000/login', {
+        const response = await fetch(`${backend_url}/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

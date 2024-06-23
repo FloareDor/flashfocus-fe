@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import flashlogo from '@assets/img/flashlogo.svg';
+import backend_url from './links';
 
 export default function Onboard(): JSX.Element {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -38,7 +39,7 @@ export default function Onboard(): JSX.Element {
 
   const fetchExistingData = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/get-data', {
+      const response = await fetch(`${backend_url}/get-data`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -74,7 +75,7 @@ export default function Onboard(): JSX.Element {
   const fetchAndSaveFlashcards = async (token: string) => {
     setIsLoadingFlashcards(true);
     try {
-      const response = await fetch('http://localhost:8000/get-qna', {
+      const response = await fetch(`${backend_url}/get-qna`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -120,7 +121,7 @@ export default function Onboard(): JSX.Element {
     formData.append('urls', JSON.stringify({ urls: urlsArray }));
   
     try {
-      const response = await fetch('http://localhost:8000/upload', {
+      const response = await fetch(`${backend_url}/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwtToken}`

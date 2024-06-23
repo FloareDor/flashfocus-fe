@@ -61,6 +61,7 @@
 		"scopes":["openid", "email", "profile"]
 	},
   "host_permissions": [
-    "http://localhost:8000/*"
+    "http://localhost:8000/*",
+    "https://waffle-be-3a2l5.ondigitalocean.app/*"
   ]
 }
